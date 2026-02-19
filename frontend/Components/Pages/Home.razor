@@ -1,7 +1,43 @@
 @page "/"
-<PageTitle>Početna</PageTitle>
+@inject KnjigeApiService Api
+@inject NavigationManager Nav
 
-<div class="p-5">
-    <h1>Knjižnica</h1>
-    <p>Dobrodošli u aplikaciju knjižnice.</p>
+<PageTitle>Knjižnica</PageTitle>
+
+<div class="container py-4">
+    <h1 class="mb-4">Knjižnica</h1>
+
+    <div class="shelf-buttons">
+        <a href="/dodaj" class="btn btn-primary btn-shelf">➕ Dodaj knjigu</a>
+        <a href="/upravljaj" class="btn btn-outline-secondary btn-shelf">✏️ Uredi / Izbriši</a>
+    </div>
+
+    <div class="shelf-container">
+        <div class="books-row">
+            @if (loading) { <p class="text-white">Učitavanje…</p> }
+            else if (knjige.Count == 0) { <p class="text-white">Nema knjiga.</p> }
+            else
+            {
+                @foreach (var k in knjige)
+                {
+                    var hue = (k.Id * 37) % 360;
+                    <a href="/knjiga/@k.Id" class="book-spine" style="background: linear-gradient(90deg, hsl(@hue, 50%, 35%) 0%, hsl(@hue, 45%, 28%) 100%); height: @(80 + (k.Naziv.Length % 5) * 12)px;">
+                        <span class="book-title">@k.Naziv</span>
+                        <small>@k.Autor</small>
+                    </a>
+                }
+            }
+        </div>
+    </div>
 </div>
+
+@code {
+    List<KnjigaDto> knjige = new();
+    bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        knjige = await Api.GetSveKnjigeAsync();
+        loading = false;
+    }
+}
