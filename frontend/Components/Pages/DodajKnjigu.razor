@@ -1,0 +1,79 @@
+@page "/dodaj"
+@rendermode InteractiveServer
+@inject KnjigeApiService Api
+@inject NavigationManager Nav
+
+<PageTitle>Dodaj knjigu</PageTitle>
+
+<div class="container py-4">
+    <a href="/" class="btn btn-outline-secondary back-link">← Natrag na policu</a>
+
+    <h2>Dodaj novu knjigu</h2>
+
+    <EditForm Model="model" OnValidSubmit="Spremi" FormName="dodajKnjigu">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" />
+
+        <div class="mb-3">
+            <label class="form-label">Naziv</label>
+            <InputText class="form-control" @bind-Value="model.Naziv" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Autor</label>
+            <InputText class="form-control" @bind-Value="model.Autor" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">ISBN</label>
+            <InputText class="form-control" @bind-Value="model.ISBN" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Knjižnice</label>
+            @foreach (var k in knjiznice)
+            {
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="lib_@k.Id"
+                           checked="@izabraneKnjiznice.Contains(k.Id)"
+                           @onchange="@(_ => ToggleKnjiznica(k.Id))" />
+                    <label class="form-check-label" for="lib_@k.Id">@k.Naziv</label>
+                </div>
+            }
+        </div>
+        <button type="submit" class="btn btn-primary" disabled="@sprema">Spremi</button>
+        <a href="/" class="btn btn-secondary ms-2">Odustani</a>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(greska)) { <p class="text-danger mt-2">@greska</p> }
+</div>
+
+@code {
+    DodajKnjiguModel model = new();
+    List<KnjiznicaDto> knjiznice = new();
+    HashSet<int> izabraneKnjiznice = new();
+    string greska = "";
+    bool sprema;
+
+    protected override async Task OnInitializedAsync() => knjiznice = await Api.GetKnjizniceAsync();
+
+    void ToggleKnjiznica(int id)
+    {
+        if (izabraneKnjiznice.Contains(id)) izabraneKnjiznice.Remove(id);
+        else izabraneKnjiznice.Add(id);
+    }
+
+    async Task Spremi()
+    {
+        sprema = true;
+        greska = "";
+        var (ok, err) = await Api.DodajKnjiguAsync(model.Naziv, model.Autor, model.ISBN, izabraneKnjiznice.ToList());
+        sprema = false;
+        if (ok) Nav.NavigateTo("/");
+        else greska = err ?? "Greška pri spremanju.";
+    }
+
+    class DodajKnjiguModel
+    {
+        public string Naziv { get; set; } = "";
+        public string Autor { get; set; } = "";
+        public string ISBN { get; set; } = "";
+    }
+}

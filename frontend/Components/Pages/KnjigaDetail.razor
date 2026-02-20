@@ -1,0 +1,48 @@
+@page "/knjiga/{Id:int}"
+@inject KnjigeApiService Api
+@inject NavigationManager Nav
+
+<PageTitle>@(knjiga?.Naziv ?? "Knjiga")</PageTitle>
+
+<div class="container py-4">
+    <a href="/" class="btn btn-outline-secondary back-link">← Natrag na policu</a>
+
+    @if (loading) { <p>Učitavanje…</p> }
+    else if (knjiga is null) { <p>Knjiga nije pronađena.</p> }
+    else
+    {
+        <div class="book-detail-layout">
+            <div>
+                <h2>@knjiga.Naziv</h2>
+                <p><strong>Autor:</strong> @knjiga.Autor</p>
+                <p><strong>ISBN:</strong> @knjiga.ISBN</p>
+            </div>
+            <div class="libraries-panel">
+                <h4>U knjižnicama</h4>
+                @if (knjiga.KnjiznicaKnjige.Count == 0) { <p class="text-muted">Nije u niti jednoj knjižnici.</p> }
+                else
+                {
+                    @foreach (var kk in knjiga.KnjiznicaKnjige)
+                    {
+                        @if (kk.Knjiznica != null)
+                        {
+                            <span class="library-badge">@kk.Knjiznica.Naziv</span>
+                        }
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    KnjigaDto? knjiga;
+    bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        knjiga = await Api.GetKnjigaAsync(Id);
+        loading = false;
+    }
+}

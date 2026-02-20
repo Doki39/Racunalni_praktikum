@@ -1,0 +1,56 @@
+@page "/upravljaj"
+@rendermode InteractiveServer
+@inject KnjigeApiService Api
+@inject NavigationManager Nav
+
+<PageTitle>Uredi / Izbriši knjige</PageTitle>
+
+<div class="container py-4">
+    <a href="/" class="btn btn-outline-secondary back-link">← Natrag na policu</a>
+
+    <h2>Upravljanje knjigama</h2>
+
+    @if (loading) { <p>Učitavanje…</p> }
+    else if (knjige.Count == 0) { <p>Nema knjiga.</p> }
+    else
+    {
+        <ul class="list-group list-group-flush">
+            @foreach (var k in knjige)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><strong>@k.Naziv</strong> – @k.Autor (@k.ISBN)</span>
+                    <span>
+                        <a href="/uredi/@k.Id" class="btn btn-sm btn-outline-primary">Uredi</a>
+                        <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => Izbrisi(k.Id)">Izbriši</button>
+                    </span>
+                </li>
+            }
+        </ul>
+    }
+    @if (!string.IsNullOrEmpty(greska)) { <p class="text-danger mt-2">@greska</p> }
+</div>
+
+@code {
+    List<KnjigaDto> knjige = new();
+    bool loading = true;
+    string? greska;
+
+    protected override async Task OnInitializedAsync()
+    {
+        knjige = await Api.GetSveKnjigeAsync();
+        loading = false;
+    }
+
+    async Task Izbrisi(int id)
+    {
+        greska = null;
+        var (ok, err) = await Api.IzbrisiKnjiguAsync(id);
+        if (ok)
+        {
+            knjige = await Api.GetSveKnjigeAsync();
+            StateHasChanged();
+        }
+        else
+            greska = err ?? "Greška pri brisanju.";
+    }
+}
